@@ -1,0 +1,9 @@
+# Backend Dev Mental Model
+# This file is maintained by the Backend Dev agent.
+# It will be populated automatically as the agent works.
+#
+# Expected categories (will emerge organically):
+#   - api_patterns: API design conventions in this codebase
+#   - data_models: Database schema and model relationships
+#   - infrastructure_notes: Deployment, config, and infra patterns
+---

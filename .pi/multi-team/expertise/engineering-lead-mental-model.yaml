@@ -1,0 +1,9 @@
+# Engineering Lead Mental Model
+# This file is maintained by the Engineering Lead agent.
+# It will be populated automatically as the agent works.
+#
+# Expected categories (will emerge organically):
+#   - architecture: System architecture decisions and rationale
+#   - technical_debt: Known debt items and their impact
+#   - risk_patterns: Recurring risks and mitigation strategies
+---

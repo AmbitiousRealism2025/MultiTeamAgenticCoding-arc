@@ -1,0 +1,9 @@
+# QA Engineer Mental Model
+# This file is maintained by the QA Engineer agent.
+# It will be populated automatically as the agent works.
+#
+# Expected categories (will emerge organically):
+#   - test_strategies: Testing approaches that work for this codebase
+#   - regression_areas: Code areas prone to regressions
+#   - flaky_tests: Tests that intermittently fail and why
+---

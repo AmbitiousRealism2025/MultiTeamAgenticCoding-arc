@@ -1,0 +1,9 @@
+# Orchestrator Mental Model
+# This file is maintained by the Orchestrator agent.
+# It will be populated automatically as the agent works.
+#
+# Expected categories (will emerge organically):
+#   - team_dynamics: How teams interact, strengths, communication patterns
+#   - delegation_patterns: What works when routing tasks to teams
+#   - coordination_notes: Cross-team dependencies, sequencing insights
+---

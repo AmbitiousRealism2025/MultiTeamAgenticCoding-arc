@@ -1,0 +1,9 @@
+# Frontend Dev Mental Model
+# This file is maintained by the Frontend Dev agent.
+# It will be populated automatically as the agent works.
+#
+# Expected categories (will emerge organically):
+#   - component_patterns: UI component conventions in this codebase
+#   - state_management: How state is managed and where
+#   - ui_decisions: Design and implementation decisions made
+---

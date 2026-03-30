@@ -1,0 +1,9 @@
+# Validation Lead Mental Model
+# This file is maintained by the Validation Lead agent.
+# It will be populated automatically as the agent works.
+#
+# Expected categories (will emerge organically):
+#   - quality_standards: What "good enough" means for this project
+#   - coverage_gaps: Areas lacking test or review coverage
+#   - process_notes: Validation workflow patterns that work
+---

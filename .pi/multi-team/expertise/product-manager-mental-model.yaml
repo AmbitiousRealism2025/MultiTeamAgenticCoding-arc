@@ -1,0 +1,9 @@
+# Product Manager Mental Model
+# This file is maintained by the Product Manager agent.
+# It will be populated automatically as the agent works.
+#
+# Expected categories (will emerge organically):
+#   - requirements: Feature requirements and their status
+#   - user_stories: User stories written and their acceptance criteria
+#   - acceptance_criteria: Patterns for writing good acceptance criteria
+---

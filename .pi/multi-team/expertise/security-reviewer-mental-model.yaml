@@ -1,0 +1,9 @@
+# Security Reviewer Mental Model
+# This file is maintained by the Security Reviewer agent.
+# It will be populated automatically as the agent works.
+#
+# Expected categories (will emerge organically):
+#   - vulnerability_patterns: Common vulnerability patterns found
+#   - auth_concerns: Authentication/authorization issues tracked
+#   - dependency_risks: Third-party dependency security notes
+---
