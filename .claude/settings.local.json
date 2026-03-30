@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(do echo:*)",
+      "Read(//mnt/d/Documents/Code/GitHub/MultiTeamAgenticCoding/**)"
+    ]
+  }
+}
