@@ -1,0 +1,47 @@
+# Agent Pi runtime data
+.pi/multi-team/sessions/*
+!.pi/multi-team/sessions/.gitkeep
+.pi/multi-team/logs/*
+!.pi/multi-team/logs/.gitkeep
+
+# Expertise files (agent mental models grow per-project, don't share across clones)
+# Uncomment the next line if you want expertise to be local-only:
+# .pi/multi-team/expertise/*.yaml
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-error.log*
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.venv/
+.venv_linux/
+*.egg
+
+# Environment and secrets
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+credentials.json
+
+# Logs
+*.log
