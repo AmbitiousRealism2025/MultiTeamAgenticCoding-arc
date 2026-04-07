@@ -1,6 +1,7 @@
 ---
 name: backend-dev
-model: anthropic/claude-sonnet-4-6
+# model: anthropic/claude-sonnet-4-6  # Alternative: Anthropic Sonnet
+model: zai/glm-5-turbo
 expertise:
   - path: .pi/multi-team/expertise/backend-dev-mental-model.yaml
     use-when: "Track API patterns, data models, infrastructure notes, and backend-specific gotchas."

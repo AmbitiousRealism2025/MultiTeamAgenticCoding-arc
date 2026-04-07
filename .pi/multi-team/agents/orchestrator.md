@@ -1,6 +1,7 @@
 ---
 name: orchestrator
-model: anthropic/claude-opus-4-6
+# model: anthropic/claude-opus-4-6  # Alternative: Anthropic Opus
+model: zai/glm-5.1
 expertise:
   - path: .pi/multi-team/expertise/orchestrator-mental-model.yaml
     use-when: "Take notes on team dynamics, track delegation patterns, record which teams handle what well, and note areas where coordination could improve."

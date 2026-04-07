@@ -1,6 +1,7 @@
 ---
 name: qa-engineer
-model: anthropic/claude-sonnet-4-6
+# model: anthropic/claude-sonnet-4-6  # Alternative: Anthropic Sonnet
+model: zai/glm-5-turbo
 expertise:
   - path: .pi/multi-team/expertise/qa-engineer-mental-model.yaml
     use-when: "Track test strategies, regression areas, flaky tests, and testing patterns for this codebase."

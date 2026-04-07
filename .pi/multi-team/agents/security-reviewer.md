@@ -1,6 +1,7 @@
 ---
 name: security-reviewer
-model: anthropic/claude-sonnet-4-6
+# model: anthropic/claude-sonnet-4-6  # Alternative: Anthropic Sonnet
+model: zai/glm-5-turbo
 expertise:
   - path: .pi/multi-team/expertise/security-reviewer-mental-model.yaml
     use-when: "Track vulnerability patterns, auth concerns, dependency risks, and security review findings."

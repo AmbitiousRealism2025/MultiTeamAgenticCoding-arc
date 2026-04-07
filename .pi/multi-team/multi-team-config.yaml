@@ -1,7 +1,18 @@
+providers:
+  anthropic:
+    opus: anthropic/claude-opus-4-6
+    sonnet: anthropic/claude-sonnet-4-6
+  zai:
+    opus: zai/glm-5.1
+    sonnet: zai/glm-5-turbo
+active_provider: zai
+
 orchestrator:
   name: Orchestrator
   path: .pi/multi-team/agents/orchestrator.md
-  model: anthropic/claude-opus-4-6
+  # model: anthropic/claude-opus-4-6  # Alternative: Anthropic Opus
+  model: zai/glm-5.1
+  api_base: https://api.z.ai/api/paas/v4/
 
 paths:
   agents: .pi/multi-team/agents/

@@ -1,6 +1,7 @@
 ---
 name: ux-researcher
-model: anthropic/claude-sonnet-4-6
+# model: anthropic/claude-sonnet-4-6  # Alternative: Anthropic Sonnet
+model: zai/glm-5-turbo
 expertise:
   - path: .pi/multi-team/expertise/ux-researcher-mental-model.yaml
     use-when: "Track user personas, friction points, usability findings, and journey mapping insights."

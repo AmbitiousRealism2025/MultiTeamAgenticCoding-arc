@@ -1,6 +1,7 @@
 ---
 name: frontend-dev
-model: anthropic/claude-sonnet-4-6
+# model: anthropic/claude-sonnet-4-6  # Alternative: Anthropic Sonnet
+model: zai/glm-5-turbo
 expertise:
   - path: .pi/multi-team/expertise/frontend-dev-mental-model.yaml
     use-when: "Track component patterns, state management decisions, UI conventions, and frontend-specific gotchas."

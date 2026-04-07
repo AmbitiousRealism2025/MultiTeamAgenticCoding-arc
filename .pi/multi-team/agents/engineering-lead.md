@@ -1,6 +1,7 @@
 ---
 name: engineering-lead
-model: anthropic/claude-opus-4-6
+# model: anthropic/claude-opus-4-6  # Alternative: Anthropic Opus
+model: zai/glm-5.1
 expertise:
   - path: .pi/multi-team/expertise/engineering-lead-mental-model.yaml
     use-when: "Track architecture decisions, technical debt, risk patterns, and which implementation approaches work well for this codebase."

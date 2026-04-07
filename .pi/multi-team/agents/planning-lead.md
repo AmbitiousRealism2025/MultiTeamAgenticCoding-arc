@@ -1,6 +1,7 @@
 ---
 name: planning-lead
-model: anthropic/claude-opus-4-6
+# model: anthropic/claude-opus-4-6  # Alternative: Anthropic Opus
+model: zai/glm-5.1
 expertise:
   - path: .pi/multi-team/expertise/planning-lead-mental-model.yaml
     use-when: "Track project scope, priorities, stakeholder decisions, and planning patterns across sessions."

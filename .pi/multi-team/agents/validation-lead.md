@@ -1,6 +1,7 @@
 ---
 name: validation-lead
-model: anthropic/claude-opus-4-6
+# model: anthropic/claude-opus-4-6  # Alternative: Anthropic Opus
+model: zai/glm-5.1
 expertise:
   - path: .pi/multi-team/expertise/validation-lead-mental-model.yaml
     use-when: "Track quality standards, coverage gaps, process notes, and validation patterns across sessions."

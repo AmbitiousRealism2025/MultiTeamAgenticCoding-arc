@@ -28,19 +28,19 @@ Agent Pi is a customizable agentic coding harness that runs Claude-based agents 
 User
  |
  v
-Orchestrator  [claude-opus-4-6]
+Orchestrator  [glm-5.1 / claude-opus-4-6]
  |
- +-- Planning Lead  [claude-opus-4-6]
- |    |-- Product Manager     [claude-sonnet-4-6]
- |    +-- UX Researcher       [claude-sonnet-4-6]
+ +-- Planning Lead  [glm-5.1 / claude-opus-4-6]
+ |    |-- Product Manager     [glm-5-turbo / claude-sonnet-4-6]
+ |    +-- UX Researcher       [glm-5-turbo / claude-sonnet-4-6]
  |
- +-- Engineering Lead  [claude-opus-4-6]
- |    |-- Frontend Dev        [claude-sonnet-4-6]
- |    +-- Backend Dev         [claude-sonnet-4-6]
+ +-- Engineering Lead  [glm-5.1 / claude-opus-4-6]
+ |    |-- Frontend Dev        [glm-5-turbo / claude-sonnet-4-6]
+ |    +-- Backend Dev         [glm-5-turbo / claude-sonnet-4-6]
  |
- +-- Validation Lead  [claude-opus-4-6]
-      |-- QA Engineer         [claude-sonnet-4-6]
-      +-- Security Reviewer   [claude-sonnet-4-6]
+ +-- Validation Lead  [glm-5.1 / claude-opus-4-6]
+      |-- QA Engineer         [glm-5-turbo / claude-sonnet-4-6]
+      +-- Security Reviewer   [glm-5-turbo / claude-sonnet-4-6]
 ```
 
 ### The Three Tiers
@@ -76,13 +76,13 @@ The user interacts only with the Orchestrator. Everything below that layer is in
 
 **Purpose:** Define what gets built, why, and in what order. Translate business intent into actionable specifications.
 
-**Planning Lead** (`claude-opus-4-6`)
+**Planning Lead** (`glm-5.1` / `claude-opus-4-6`)
 Owns the planning process. Writes specs, defines user stories, sets priorities, manages scope. Delegates specialist work to Product Manager and UX Researcher. Reports planning recommendations back to the Orchestrator.
 
 | Member | Model | Consult When |
 |--------|-------|--------------|
-| Product Manager | claude-sonnet-4-6 | Requirements, feature prioritization, user stories, acceptance criteria |
-| UX Researcher | claude-sonnet-4-6 | User behavior, personas, journey mapping, usability, friction points |
+| Product Manager | glm-5-turbo / claude-sonnet-4-6 | Requirements, feature prioritization, user stories, acceptance criteria |
+| UX Researcher | glm-5-turbo / claude-sonnet-4-6 | User behavior, personas, journey mapping, usability, friction points |
 
 **Product Manager** — Translates business needs into specifications. Writes user stories with testable acceptance criteria. Prioritizes features by user impact, effort, dependencies, and risk. Writes artifacts to `specs/`.
 
@@ -94,13 +94,13 @@ Owns the planning process. Writes specs, defines user stories, sets priorities, 
 
 **Purpose:** Build and maintain the software. Own implementation across frontend and backend.
 
-**Engineering Lead** (`claude-opus-4-6`)
+**Engineering Lead** (`glm-5.1` / `claude-opus-4-6`)
 Tracks architecture decisions, technical debt, risk patterns, and implementation approaches. Delegates frontend work to Frontend Dev and backend work to Backend Dev. When both are needed, coordinates sequencing (backend first when frontend depends on API changes). Reviews member output for architectural consistency.
 
 | Member | Model | Consult When |
 |--------|-------|--------------|
-| Frontend Dev | claude-sonnet-4-6 | UI components, layouts, client-side state, browser APIs, CSS |
-| Backend Dev | claude-sonnet-4-6 | APIs, databases, infrastructure, background jobs, third-party integrations |
+| Frontend Dev | glm-5-turbo / claude-sonnet-4-6 | UI components, layouts, client-side state, browser APIs, CSS |
+| Backend Dev | glm-5-turbo / claude-sonnet-4-6 | APIs, databases, infrastructure, background jobs, third-party integrations |
 
 **Frontend Dev** — Owns `src/frontend/`. Builds UI components, manages client-side state, handles browser API integrations and styling. Reads backend code to understand API contracts but never modifies it.
 
@@ -112,13 +112,13 @@ Tracks architecture decisions, technical debt, risk patterns, and implementation
 
 **Purpose:** Ensure quality and security across everything engineering ships.
 
-**Validation Lead** (`claude-opus-4-6`)
+**Validation Lead** (`glm-5.1` / `claude-opus-4-6`)
 Owns the ship/no-ship decision. Delegates testing to QA Engineer and security audits to Security Reviewer. For code changes, typically engages both in parallel. Synthesizes their findings into a clear validation report with an explicit recommendation.
 
 | Member | Model | Consult When |
 |--------|-------|--------------|
-| QA Engineer | claude-sonnet-4-6 | Test coverage, edge cases, regression testing, integration tests |
-| Security Reviewer | claude-sonnet-4-6 | Vulnerabilities, auth patterns, input validation, dependency risks |
+| QA Engineer | glm-5-turbo / claude-sonnet-4-6 | Test coverage, edge cases, regression testing, integration tests |
+| Security Reviewer | glm-5-turbo / claude-sonnet-4-6 | Vulnerabilities, auth patterns, input validation, dependency risks |
 
 **QA Engineer** — Owns `tests/`. Writes and runs tests covering happy paths, edge cases, error conditions, and integration points. Runs existing test suites to catch regressions. Reports pass/fail counts, specific failures, and blocking vs. non-blocking issues.
 
@@ -180,7 +180,8 @@ Each agent file begins with YAML frontmatter that Agent Pi reads to configure th
 ```yaml
 ---
 name: backend-dev
-model: anthropic/claude-sonnet-4-6
+# model: anthropic/claude-sonnet-4-6  # Alternative: Anthropic Sonnet
+model: zai/glm-5-turbo
 expertise:
   - path: .pi/multi-team/expertise/backend-dev-mental-model.yaml
     use-when: "Track API patterns, data models, infrastructure notes, and backend-specific gotchas."
@@ -224,7 +225,7 @@ domain:
 | Field | Description |
 |-------|-------------|
 | `name` | Agent identifier used in delegation and conversation logging |
-| `model` | Anthropic model to use for this agent |
+| `model` | Model ID (supports Anthropic and Z.ai providers) |
 | `expertise` | List of personal YAML files to load as the agent's mental model |
 | `expertise[].use-when` | Instruction for when to read/update this file |
 | `expertise[].updatable` | Whether the agent can write to this file |
@@ -443,10 +444,46 @@ To remove a worker, reverse these steps and remove them from the lead's `{{MEMBE
 Model assignments are in two places: the `model:` field in each agent's frontmatter, and the `model:` field in `multi-team-config.yaml` for the orchestrator. Update both if they differ.
 
 The current default assignments reflect a cost/intelligence tradeoff:
-- Leads and Orchestrator: `claude-opus-4-6` (more capable, used for reasoning and coordination)
-- Workers: `claude-sonnet-4-6` (fast and cost-efficient, used for execution)
+- Leads and Orchestrator: `glm-5.1` / `claude-opus-4-6` (more capable, used for reasoning and coordination)
+- Workers: `glm-5-turbo` / `claude-sonnet-4-6` (fast and cost-efficient, used for execution)
 
-You can use any Anthropic model in any position.
+You can use any model from either provider in any position. To switch providers globally, update the `active_provider` field and the `model:` fields accordingly.
+
+### Provider Configuration
+
+The `providers` block in `multi-team-config.yaml` defines available model providers and their tier mappings:
+
+```yaml
+providers:
+  anthropic:
+    opus: anthropic/claude-opus-4-6
+    sonnet: anthropic/claude-sonnet-4-6
+  zai:
+    opus: zai/glm-5.1
+    sonnet: zai/glm-5-turbo
+active_provider: zai
+```
+
+**Tier mapping:**
+- `opus` tier → Used by Orchestrator and Team Leads (high reasoning capability)
+- `sonnet` tier → Used by Workers (fast execution, cost-efficient)
+
+**To switch to Anthropic:**
+1. Set `active_provider: anthropic` in `multi-team-config.yaml`
+2. Uncomment the Anthropic model lines and comment out the Zai lines in each agent file
+3. Remove or comment out the `api_base` field (Anthropic uses its default endpoint)
+
+**To switch to Z.ai:**
+1. Set `active_provider: zai` in `multi-team-config.yaml`
+2. Ensure `api_base: https://api.z.ai/api/paas/v4/` is set on the orchestrator config
+3. Set the `ZAI_API_KEY` environment variable with your Z.ai API key
+
+**Z.ai API details:**
+- General endpoint: `https://api.z.ai/api/paas/v4/`
+- Coding endpoint: `https://api.z.ai/api/coding/paas/v4`
+- Auth: Bearer token via `Authorization: Bearer <key>`
+- Context window: 200K tokens, 128K max output
+- OpenAI-compatible API format
 
 ### Add New Skills
 
@@ -475,10 +512,20 @@ This injects the file's content into the agent's context without allowing the ag
 ### `multi-team-config.yaml`
 
 ```yaml
+providers:                       # Available model providers and tier mappings
+  anthropic:
+    opus: anthropic/claude-opus-4-6
+    sonnet: anthropic/claude-sonnet-4-6
+  zai:
+    opus: zai/glm-5.1
+    sonnet: zai/glm-5-turbo
+active_provider: zai             # Currently active provider
+
 orchestrator:
   name: Orchestrator          # Display name
   path: ...                   # Path to the orchestrator agent file
-  model: anthropic/...        # Model override (if different from agent frontmatter)
+  model: zai/glm-5.1          # Model override (if different from agent frontmatter)
+  api_base: https://api.z.ai/api/paas/v4/  # API endpoint (Z.ai)
 
 paths:
   agents: .pi/multi-team/agents/      # Where Agent Pi looks for agent files
@@ -505,6 +552,8 @@ teams:
 
 | Field | Required | Description |
 |-------|----------|-------------|
+| `providers` | No | Available model providers and tier mappings |
+| `active_provider` | No | Currently active provider (`anthropic` or `zai`) |
 | `orchestrator` | Yes | The top-level coordinator agent |
 | `paths` | Yes | Filesystem paths Agent Pi uses for sessions and logs |
 | `shared_context` | No | Files loaded into all agents at startup (README, CLAUDE.md, etc.) |
@@ -521,11 +570,11 @@ teams:
 
 Multi-team agentic sessions involve multiple model calls per user request. Here is the general cost profile:
 
-**Orchestrator and Leads use Opus.**
-Opus is more capable and more expensive. These agents are used for classification, delegation, synthesis, and architectural judgment — work where model quality matters most. A typical routed request involves one Orchestrator call and one Lead call.
+**Orchestrator and Leads use the Opus-tier model** (`glm-5.1` or `claude-opus-4-6`).
+Opus-tier models are more capable and more expensive. These agents are used for classification, delegation, synthesis, and architectural judgment — work where model quality matters most. A typical routed request involves one Orchestrator call and one Lead call.
 
-**Workers use Sonnet.**
-Sonnet is faster and significantly less expensive. Workers do the bulk of the token consumption — reading code, writing implementations, running tests — but at Sonnet pricing.
+**Workers use the Sonnet-tier model** (`glm-5-turbo` or `claude-sonnet-4-6`).
+Sonnet-tier models are faster and significantly less expensive. Workers do the bulk of the token consumption — reading code, writing implementations, running tests — but at lower pricing.
 
 **Mental models add to context.**
 Each agent loads its expertise file at task start. As these files grow over sessions, they add tokens to every call. The `max-lines: 10000` limit bounds this growth. Agents are instructed to prune stale entries rather than letting files grow unbounded.
@@ -541,4 +590,4 @@ A simple backend question routes to the Orchestrator plus Engineering Lead plus 
 
 - Inspired by [IndyDevDan](https://github.com/indydevdan)'s multi-team agentic coding system and approach to structured agent delegation
 - Built for the [Agent Pi](https://github.com/agentpi) agentic coding harness
-- Uses Claude models by [Anthropic](https://anthropic.com)
+- Uses Claude models by [Anthropic](https://anthropic.com) and GLM models by [Z.ai](https://z.ai)

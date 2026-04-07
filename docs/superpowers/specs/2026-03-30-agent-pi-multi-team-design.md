@@ -16,16 +16,16 @@ A complete, generic, reusable Agent Pi multi-team configuration implementing a 3
 
 ```
 User
-  └── Orchestrator (Opus)
-        ├── Planning Lead (Opus)
-        │     ├── Product Manager (Sonnet)
-        │     └── UX Researcher (Sonnet)
-        ├── Engineering Lead (Opus)
-        │     ├── Frontend Dev (Sonnet)
-        │     └── Backend Dev (Sonnet)
-        └── Validation Lead (Opus)
-              ├── QA Engineer (Sonnet)
-              └── Security Reviewer (Sonnet)
+  └── Orchestrator (Opus-tier: glm-5.1 / claude-opus-4-6)
+        ├── Planning Lead (Opus-tier)
+        │     ├── Product Manager (Sonnet-tier: glm-5-turbo / claude-sonnet-4-6)
+        │     └── UX Researcher (Sonnet-tier)
+        ├── Engineering Lead (Opus-tier)
+        │     ├── Frontend Dev (Sonnet-tier)
+        │     └── Backend Dev (Sonnet-tier)
+        └── Validation Lead (Opus-tier)
+              ├── QA Engineer (Sonnet-tier)
+              └── Security Reviewer (Sonnet-tier)
 ```
 
 - **Orchestrator**: Routes user requests to the right team, synthesizes output. Only talks to leads.
@@ -109,7 +109,7 @@ Each agent is a `.md` file with YAML frontmatter and a markdown system prompt bo
 | Property | Description | Orchestrator | Leads | Workers |
 |----------|-------------|-------------|-------|---------|
 | `name` | Agent identifier | yes | yes | yes |
-| `model` | Claude model ID | `anthropic/claude-opus-4-6` | `anthropic/claude-opus-4-6` | `anthropic/claude-sonnet-4-6` |
+| `model` | Model ID (supports Anthropic and Z.ai) | `zai/glm-5.1` (alt: `anthropic/claude-opus-4-6`) | `zai/glm-5.1` (alt: `anthropic/claude-opus-4-6`) | `zai/glm-5-turbo` (alt: `anthropic/claude-sonnet-4-6`) |
 | `expertise` | Array of mental model file references | yes | yes | yes |
 | `expertise[].path` | Path to YAML expertise file | yes | yes | yes |
 | `expertise[].use-when` | When to consult this file | yes | yes | yes |

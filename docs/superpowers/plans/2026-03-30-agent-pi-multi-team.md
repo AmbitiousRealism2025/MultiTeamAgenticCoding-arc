@@ -37,7 +37,7 @@ Write to `.pi/multi-team/multi-team-config.yaml`:
 orchestrator:
   name: Orchestrator
   path: .pi/multi-team/agents/orchestrator.md
-  model: anthropic/claude-opus-4-6
+  model: zai/glm-5.1  # Alternative: anthropic/claude-opus-4-6
 
 paths:
   agents: .pi/multi-team/agents/
@@ -357,7 +357,8 @@ Write to `.pi/multi-team/agents/orchestrator.md`:
 ````markdown
 ---
 name: orchestrator
-model: anthropic/claude-opus-4-6
+# model: anthropic/claude-opus-4-6  # Alternative: Anthropic Opus
+model: zai/glm-5.1
 expertise:
   - path: .pi/multi-team/expertise/orchestrator-mental-model.yaml
     use-when: "Take notes on team dynamics, track delegation patterns, record which teams handle what well, and note areas where coordination could improve."
@@ -475,7 +476,8 @@ Write to `.pi/multi-team/agents/planning-lead.md`:
 ````markdown
 ---
 name: planning-lead
-model: anthropic/claude-opus-4-6
+# model: anthropic/claude-opus-4-6  # Alternative: Anthropic Opus
+model: zai/glm-5.1
 expertise:
   - path: .pi/multi-team/expertise/planning-lead-mental-model.yaml
     use-when: "Track project scope, priorities, stakeholder decisions, and planning patterns across sessions."
@@ -571,7 +573,8 @@ Write to `.pi/multi-team/agents/product-manager.md`:
 ````markdown
 ---
 name: product-manager
-model: anthropic/claude-sonnet-4-6
+# model: anthropic/claude-sonnet-4-6  # Alternative: Anthropic Sonnet
+model: zai/glm-5-turbo
 expertise:
   - path: .pi/multi-team/expertise/product-manager-mental-model.yaml
     use-when: "Track requirements, user stories, acceptance criteria, and prioritization decisions."
@@ -650,7 +653,8 @@ Write to `.pi/multi-team/agents/ux-researcher.md`:
 ````markdown
 ---
 name: ux-researcher
-model: anthropic/claude-sonnet-4-6
+# model: anthropic/claude-sonnet-4-6  # Alternative: Anthropic Sonnet
+model: zai/glm-5-turbo
 expertise:
   - path: .pi/multi-team/expertise/ux-researcher-mental-model.yaml
     use-when: "Track user personas, friction points, usability findings, and journey mapping insights."
@@ -745,7 +749,8 @@ Write to `.pi/multi-team/agents/engineering-lead.md`:
 ````markdown
 ---
 name: engineering-lead
-model: anthropic/claude-opus-4-6
+# model: anthropic/claude-opus-4-6  # Alternative: Anthropic Opus
+model: zai/glm-5.1
 expertise:
   - path: .pi/multi-team/expertise/engineering-lead-mental-model.yaml
     use-when: "Track architecture decisions, technical debt, risk patterns, and which implementation approaches work well for this codebase."
@@ -841,7 +846,8 @@ Write to `.pi/multi-team/agents/frontend-dev.md`:
 ````markdown
 ---
 name: frontend-dev
-model: anthropic/claude-sonnet-4-6
+# model: anthropic/claude-sonnet-4-6  # Alternative: Anthropic Sonnet
+model: zai/glm-5-turbo
 expertise:
   - path: .pi/multi-team/expertise/frontend-dev-mental-model.yaml
     use-when: "Track component patterns, state management decisions, UI conventions, and frontend-specific gotchas."
@@ -923,7 +929,8 @@ Write to `.pi/multi-team/agents/backend-dev.md`:
 ````markdown
 ---
 name: backend-dev
-model: anthropic/claude-sonnet-4-6
+# model: anthropic/claude-sonnet-4-6  # Alternative: Anthropic Sonnet
+model: zai/glm-5-turbo
 expertise:
   - path: .pi/multi-team/expertise/backend-dev-mental-model.yaml
     use-when: "Track API patterns, data models, infrastructure notes, and backend-specific gotchas."
@@ -1022,7 +1029,8 @@ Write to `.pi/multi-team/agents/validation-lead.md`:
 ````markdown
 ---
 name: validation-lead
-model: anthropic/claude-opus-4-6
+# model: anthropic/claude-opus-4-6  # Alternative: Anthropic Opus
+model: zai/glm-5.1
 expertise:
   - path: .pi/multi-team/expertise/validation-lead-mental-model.yaml
     use-when: "Track quality standards, coverage gaps, process notes, and validation patterns across sessions."
@@ -1113,7 +1121,8 @@ Write to `.pi/multi-team/agents/qa-engineer.md`:
 ````markdown
 ---
 name: qa-engineer
-model: anthropic/claude-sonnet-4-6
+# model: anthropic/claude-sonnet-4-6  # Alternative: Anthropic Sonnet
+model: zai/glm-5-turbo
 expertise:
   - path: .pi/multi-team/expertise/qa-engineer-mental-model.yaml
     use-when: "Track test strategies, regression areas, flaky tests, and testing patterns for this codebase."
@@ -1195,7 +1204,8 @@ Write to `.pi/multi-team/agents/security-reviewer.md`:
 ````markdown
 ---
 name: security-reviewer
-model: anthropic/claude-sonnet-4-6
+# model: anthropic/claude-sonnet-4-6  # Alternative: Anthropic Sonnet
+model: zai/glm-5-turbo
 expertise:
   - path: .pi/multi-team/expertise/security-reviewer-mental-model.yaml
     use-when: "Track vulnerability patterns, auth concerns, dependency risks, and security review findings."
