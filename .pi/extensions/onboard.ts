@@ -16,31 +16,46 @@ import {
 import type { ConfigState, ProviderDef, ProviderId } from "../../src/onboarding";
 
 // ---------------------------------------------------------------------------
-// Shared helpers
+// Shared: Show explanation as a confirm dialog, then collect input separately.
+//
+// ctx.ui.confirm(title, message) renders the message as visible body text.
+// ctx.ui.input(title, placeholder) only shows the placeholder dimly inside
+// the input field. So any guidance the user needs to see MUST go through
+// confirm(), not input().
 // ---------------------------------------------------------------------------
 
-async function promptChoice(
+async function guidedInput(
   ctx: ExtensionCommandContext,
-  title: string,
-  body: string,
+  explainTitle: string,
+  explainMessage: string,
+  inputTitle: string,
+  inputPlaceholder: string,
+): Promise<string | null> {
+  const understood = await ctx.ui.confirm(explainTitle, explainMessage);
+  if (!understood) return null;
+  const result = await ctx.ui.input(inputTitle, inputPlaceholder);
+  return result?.trim() || null;
+}
+
+async function guidedChoice(
+  ctx: ExtensionCommandContext,
+  explainTitle: string,
+  explainMessage: string,
+  inputTitle: string,
   options: Array<{ key: string; label: string; value: string }>,
   defaultKey: string,
-) {
-  const lines = [
-    body,
-    "",
-    ...options.map((o) => `${o.key}. ${o.label}`),
-    "",
-    `Type 1, 2, or 3 and press Enter. Default: ${defaultKey}`,
-  ];
-  const value = await ctx.ui.input(title, lines.join("\n"), defaultKey);
-  if (!value) return null;
-  const normalized = value.trim().toLowerCase();
+): Promise<string | null> {
+  const understood = await ctx.ui.confirm(explainTitle, explainMessage);
+  if (!understood) return null;
+  const hint = options.map((o) => `  ${o.key}. ${o.label}`).join("\n");
+  const result = await ctx.ui.input(inputTitle, `Type ${options.map((o) => o.key).join(", ")}. Default: ${defaultKey}\n\n${hint}`);
+  if (!result) return null;
+  const normalized = result.trim().toLowerCase();
   const found = options.find((o) => o.key === normalized);
   if (found) return found.value;
   const directValue = options.find((o) => o.value.toLowerCase() === normalized);
   if (directValue) return directValue.value;
-  throw new Error(`Invalid choice: "${value}". Please enter 1, 2, or 3.`);
+  throw new Error(`Invalid choice: "${result}". Please enter ${options.map((o) => o.key).join(", ")}.`);
 }
 
 // ---------------------------------------------------------------------------
@@ -48,34 +63,33 @@ async function promptChoice(
 // ---------------------------------------------------------------------------
 
 async function showWelcome(ctx: ExtensionCommandContext) {
-  const message = [
-    "Welcome to Multi-Team Agent Pi Setup",
-    "",
-    "This wizard configures a 10-agent coding team for your project.",
-    "When finished, your agents will know which project to work on,",
-    "which AI models to use, and where your code lives.",
-    "",
-    "The team:",
-    "  - 1 Orchestrator (receives your requests, delegates to teams)",
-    "  - 3 Team Leads (Planning, Engineering, Validation)",
-    "  - 6 Workers (Product Manager, UX Researcher, Frontend Dev,",
-    "    Backend Dev, QA Engineer, Security Reviewer)",
-    "",
-    "What you will provide:",
-    "  Step 1  - Your project's root folder path",
-    "  Step 2  - Which AI provider to use (Z.ai or Anthropic)",
-    "  Step 3  - Which model leads should use",
-    "  Step 4  - Which model workers should use",
-    "  Step 5  - Where your code directories are",
-    "  Step 6  - Optional per-agent model overrides",
-    "  Step 7  - Optional API key setup",
-    "",
-    "This takes about 2 minutes. You can cancel at any step by pressing Escape.",
-    "",
-    "Ready to start? Press y to continue.",
-  ].join("\n");
-
-  return ctx.ui.confirm("Multi-Team Agent Pi Setup", message);
+  return ctx.ui.confirm(
+    "Multi-Team Agent Pi Setup",
+    [
+      "Welcome to Multi-Team Agent Pi Setup",
+      "",
+      "This wizard configures a 10-agent coding team for your project.",
+      "When finished, your agents will know which project to work on,",
+      "which AI models to use, and where your code lives.",
+      "",
+      "The team:",
+      "  - 1 Orchestrator (receives your requests, delegates to teams)",
+      "  - 3 Team Leads (Planning, Engineering, Validation)",
+      "  - 6 Workers (Product Manager, UX Researcher, Frontend Dev,",
+      "    Backend Dev, QA Engineer, Security Reviewer)",
+      "",
+      "What you will provide:",
+      "  Step 1  - Your project's root folder path",
+      "  Step 2  - Which AI provider to use (Z.ai or Anthropic)",
+      "  Step 3  - Which model leads should use",
+      "  Step 4  - Which model workers should use",
+      "  Step 5  - Where your code directories are",
+      "  Step 6  - Optional per-agent model overrides",
+      "  Step 7  - Optional API key setup",
+      "",
+      "This takes about 2 minutes. Press y to start, or n to cancel.",
+    ].join("\n"),
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -83,26 +97,34 @@ async function showWelcome(ctx: ExtensionCommandContext) {
 // ---------------------------------------------------------------------------
 
 async function promptForProjectRoot(ctx: ExtensionCommandContext) {
-  const message = [
-    "Which project should these agents work on?",
-    "",
-    "Enter the full path to your project's root folder.",
-    "This is the folder that contains your main config files",
-    "(package.json, Cargo.toml, pyproject.toml, etc.) and top-level",
-    "source directories.",
-    "",
-    "What to type: a full directory path",
-    "",
-    "Examples:",
-    "  /Users/you/projects/my-app",
-    "  /home/dev/work/api-server",
-    "  C:\\Users\\you\\projects\\my-app",
-    "",
-    "Tip: If you want the agents to work on the current project,",
-    "just press Enter to accept the default path shown below.",
-  ].join("\n");
+  const ok = await ctx.ui.confirm(
+    "Step 1 of 7 - Project Root",
+    [
+      "Which project should these agents work on?",
+      "",
+      "Enter the full path to your project's root folder.",
+      "This is the folder that contains your main config files",
+      "(package.json, Cargo.toml, pyproject.toml, etc.) and top-level",
+      "source directories.",
+      "",
+      "What to type in the next screen: a full directory path",
+      "",
+      "Examples:",
+      "  /Users/you/projects/my-app",
+      "  /home/dev/work/api-server",
+      "  C:\\Users\\you\\projects\\my-app",
+      "",
+      "Tip: You can press Enter to accept the default path.",
+      "",
+      "Press y to continue.",
+    ].join("\n"),
+  );
+  if (!ok) return null;
 
-  const result = await ctx.ui.input("Step 1 of 7 - Project Root", message, ctx.cwd);
+  const result = await ctx.ui.input(
+    "Step 1 - Enter Project Root Path",
+    ctx.cwd,
+  );
   if (!result) return null;
   return path.resolve(result.trim());
 }
@@ -112,31 +134,32 @@ async function promptForProjectRoot(ctx: ExtensionCommandContext) {
 // ---------------------------------------------------------------------------
 
 async function selectProvider(ctx: ExtensionCommandContext, current: ProviderId) {
-  const message = [
-    "Which AI service should power your agents?",
-    "",
-    "This determines which language models your agents use and which",
-    "API key you will need.",
-    "",
-    "Your two options:",
-    "",
-    "  1. Z.ai",
-    "     Provider of GLM models. Uses API key ZAI_API_KEY.",
-    "     Default lead model:   zai/glm-5.1",
-    "     Default worker model: zai/glm-5-turbo",
-    "",
-    "  2. Anthropic",
-    "     Provider of Claude models. Uses API key ANTHROPIC_API_KEY.",
-    "     Default lead model:   anthropic/claude-opus-4-6",
-    "     Default worker model: anthropic/claude-sonnet-4-6",
-    "",
-    "What to type: 1 or 2",
-  ].join("\n");
-
-  const value = await promptChoice(
+  const value = await guidedChoice(
     ctx,
     "Step 2 of 7 - AI Model Provider",
-    message,
+    [
+      "Which AI service should power your agents?",
+      "",
+      "This determines which language models your agents use and which",
+      "API key you will need.",
+      "",
+      "Your two options:",
+      "",
+      "  1. Z.ai",
+      "     Provider of GLM models. Uses API key ZAI_API_KEY.",
+      "     Default lead model:   zai/glm-5.1",
+      "     Default worker model: zai/glm-5-turbo",
+      "",
+      "  2. Anthropic",
+      "     Provider of Claude models. Uses API key ANTHROPIC_API_KEY.",
+      "     Default lead model:   anthropic/claude-opus-4-6",
+      "     Default worker model: anthropic/claude-sonnet-4-6",
+      "",
+      "What to type in the next screen: 1 or 2",
+      "",
+      "Press y to continue.",
+    ].join("\n"),
+    "Step 2 - Choose Provider",
     [
       { key: "1", label: "Z.ai (GLM-5.1, GLM-5 Turbo)", value: "zai" },
       { key: "2", label: "Anthropic (Claude Opus, Claude Sonnet)", value: "anthropic" },
@@ -159,59 +182,65 @@ async function chooseLeadModel(
 ) {
   const providerLabel = provider === "zai" ? "Z.ai" : "Anthropic";
 
-  // Show the 4 available models with friendly names
-  const modelGuide = provider === "zai"
-    ? [
-        "  The 4 available models:",
-        "",
-        "    zai/glm-5.1       -- GLM 5.1       (Z.ai's strongest, best for leads)",
-        "    zai/glm-5-turbo   -- GLM 5 Turbo   (Z.ai's faster model, good for workers)",
-        "    anthropic/claude-opus-4-6   -- Claude Opus   (Anthropic's strongest)",
-        "    anthropic/claude-sonnet-4-6 -- Claude Sonnet (Anthropic's fast model)",
-      ]
-    : [
-        "  The 4 available models:",
-        "",
-        "    anthropic/claude-opus-4-6   -- Claude Opus   (Anthropic's strongest, best for leads)",
-        "    anthropic/claude-sonnet-4-6 -- Claude Sonnet (Anthropic's fast model, good for workers)",
-        "    zai/glm-5.1       -- GLM 5.1       (Z.ai's strongest)",
-        "    zai/glm-5-turbo   -- GLM 5 Turbo   (Z.ai's faster model)",
-      ];
+  const modelGuide = [
+    "  The 4 available models:",
+    "",
+    "    zai/glm-5.1               -- GLM 5.1       (Z.ai's strongest, best for leads)",
+    "    zai/glm-5-turbo           -- GLM 5 Turbo   (Z.ai's faster model, good for workers)",
+    "    anthropic/claude-opus-4-6  -- Claude Opus   (Anthropic's strongest)",
+    "    anthropic/claude-sonnet-4-6 -- Claude Sonnet (Anthropic's fast model)",
+  ];
 
-  const message = [
-    "Choose the model for your lead-tier agents.",
-    "",
-    "These 4 agents handle coordination and planning:",
-    "  - Orchestrator    (delegates your requests to teams)",
-    "  - Planning Lead   (strategy, specs, requirements)",
-    "  - Engineering Lead (architecture, code decisions)",
-    "  - Validation Lead  (quality, security, testing)",
-    "",
-    "Leads need stronger reasoning, so pick the most capable model.",
-    "",
-    ...modelGuide,
-    "",
-    `Your provider is ${providerLabel}. The recommended lead model is ${recommended}.`,
-    "",
-    "What to type: 1, 2, or 3",
-  ].join("\n");
+  const ok = await ctx.ui.confirm(
+    "Step 3 of 7 - Lead Model",
+    [
+      "Choose the model for your lead-tier agents.",
+      "",
+      "These 4 agents handle coordination and planning:",
+      "  - Orchestrator    (delegates your requests to teams)",
+      "  - Planning Lead   (strategy, specs, requirements)",
+      "  - Engineering Lead (architecture, code decisions)",
+      "  - Validation Lead  (quality, security, testing)",
+      "",
+      "Leads need stronger reasoning, so pick the most capable model.",
+      "",
+      ...modelGuide,
+      "",
+      `Your provider is ${providerLabel}. Recommended lead model: ${recommended}`,
+      "",
+      "What to type in the next screen: 1, 2, or 3",
+      "",
+      "Press y to continue.",
+    ].join("\n"),
+  );
+  if (!ok) return null;
 
   const currentMatches = current === recommended || current === alternate;
-  const selected = await promptChoice(
-    ctx,
-    "Step 3 of 7 - Lead Model",
-    message,
-    [
-      { key: "1", label: `${recommended} (recommended)`, value: recommended },
-      { key: "2", label: alternate, value: alternate },
-      { key: "3", label: "Custom model ID", value: "__custom__" },
-    ],
-    currentMatches ? (current === alternate ? "2" : "1") : "1",
+  const defaultKey = currentMatches ? (current === alternate ? "2" : "1") : "1";
+
+  const options = [
+    { key: "1", label: `${recommended} (recommended)`, value: recommended },
+    { key: "2", label: alternate, value: alternate },
+    { key: "3", label: "Custom model ID", value: "__custom__" },
+  ];
+
+  const hint = options.map((o) => `  ${o.key}. ${o.label}`).join("\n");
+  const result = await ctx.ui.input(
+    "Step 3 - Choose Lead Model",
+    `Type 1, 2, or 3. Default: ${defaultKey}\n\n${hint}`,
   );
-  if (!selected) return null;
+
+  if (!result) return null;
+  const normalized = result.trim().toLowerCase();
+  const found = options.find((o) => o.key === normalized);
+  const selected = found
+    ? found.value
+    : options.find((o) => o.value.toLowerCase() === normalized)?.value;
+
+  if (!selected) throw new Error(`Invalid choice: "${result}". Type 1, 2, or 3.`);
   if (selected === "__custom__") {
     const fallback = currentMatches ? current : recommended;
-    const custom = await ctx.ui.input(
+    const customOk = await ctx.ui.confirm(
       "Step 3 - Custom Lead Model",
       [
         "Enter a custom model ID for all lead-tier agents.",
@@ -224,10 +253,11 @@ async function chooseLeadModel(
         "",
         "Or enter any valid model ID for your provider.",
         "",
-        "What to type: the model ID, e.g. zai/glm-5.1",
+        "Press y to continue.",
       ].join("\n"),
-      fallback,
     );
+    if (!customOk) return null;
+    const custom = await ctx.ui.input("Step 3 - Enter Custom Lead Model ID", fallback);
     return custom?.trim() || null;
   }
   return selected;
@@ -246,60 +276,67 @@ async function chooseWorkerModel(
 ) {
   const providerLabel = provider === "zai" ? "Z.ai" : "Anthropic";
 
-  const modelGuide = provider === "zai"
-    ? [
-        "  The 4 available models:",
-        "",
-        "    zai/glm-5.1       -- GLM 5.1       (Z.ai's strongest)",
-        "    zai/glm-5-turbo   -- GLM 5 Turbo   (Z.ai's faster model, good for workers)",
-        "    anthropic/claude-opus-4-6   -- Claude Opus   (Anthropic's strongest)",
-        "    anthropic/claude-sonnet-4-6 -- Claude Sonnet (Anthropic's fast model)",
-      ]
-    : [
-        "  The 4 available models:",
-        "",
-        "    anthropic/claude-opus-4-6   -- Claude Opus   (Anthropic's strongest)",
-        "    anthropic/claude-sonnet-4-6 -- Claude Sonnet (Anthropic's fast model, good for workers)",
-        "    zai/glm-5.1       -- GLM 5.1       (Z.ai's strongest)",
-        "    zai/glm-5-turbo   -- GLM 5 Turbo   (Z.ai's faster model)",
-      ];
+  const modelGuide = [
+    "  The 4 available models:",
+    "",
+    "    zai/glm-5.1               -- GLM 5.1       (Z.ai's strongest)",
+    "    zai/glm-5-turbo           -- GLM 5 Turbo   (Z.ai's faster model, good for workers)",
+    "    anthropic/claude-opus-4-6  -- Claude Opus   (Anthropic's strongest)",
+    "    anthropic/claude-sonnet-4-6 -- Claude Sonnet (Anthropic's fast model)",
+  ];
 
-  const message = [
-    "Choose the model for your worker-tier agents.",
-    "",
-    "These 6 agents do focused, specialized work:",
-    "  - Product Manager    (requirements, user stories)",
-    "  - UX Researcher      (personas, usability)",
-    "  - Frontend Dev       (UI, client-side code)",
-    "  - Backend Dev        (APIs, databases, infrastructure)",
-    "  - QA Engineer        (testing, edge cases)",
-    "  - Security Reviewer  (vulnerabilities, auth)",
-    "",
-    "Workers handle specific tasks, so a faster model is often a good fit.",
-    "",
-    ...modelGuide,
-    "",
-    `Your provider is ${providerLabel}. The recommended worker model is ${recommended}.`,
-    "",
-    "What to type: 1, 2, or 3",
-  ].join("\n");
+  const ok = await ctx.ui.confirm(
+    "Step 4 of 7 - Worker Model",
+    [
+      "Choose the model for your worker-tier agents.",
+      "",
+      "These 6 agents do focused, specialized work:",
+      "  - Product Manager    (requirements, user stories)",
+      "  - UX Researcher      (personas, usability)",
+      "  - Frontend Dev       (UI, client-side code)",
+      "  - Backend Dev        (APIs, databases, infrastructure)",
+      "  - QA Engineer        (testing, edge cases)",
+      "  - Security Reviewer  (vulnerabilities, auth)",
+      "",
+      "Workers handle specific tasks, so a faster model is often a good fit.",
+      "",
+      ...modelGuide,
+      "",
+      `Your provider is ${providerLabel}. Recommended worker model: ${recommended}`,
+      "",
+      "What to type in the next screen: 1, 2, or 3",
+      "",
+      "Press y to continue.",
+    ].join("\n"),
+  );
+  if (!ok) return null;
 
   const currentMatches = current === recommended || current === alternate;
-  const selected = await promptChoice(
-    ctx,
-    "Step 4 of 7 - Worker Model",
-    message,
-    [
-      { key: "1", label: `${recommended} (recommended)`, value: recommended },
-      { key: "2", label: alternate, value: alternate },
-      { key: "3", label: "Custom model ID", value: "__custom__" },
-    ],
-    currentMatches ? (current === alternate ? "2" : "1") : "1",
+  const defaultKey = currentMatches ? (current === alternate ? "2" : "1") : "1";
+
+  const options = [
+    { key: "1", label: `${recommended} (recommended)`, value: recommended },
+    { key: "2", label: alternate, value: alternate },
+    { key: "3", label: "Custom model ID", value: "__custom__" },
+  ];
+
+  const hint = options.map((o) => `  ${o.key}. ${o.label}`).join("\n");
+  const result = await ctx.ui.input(
+    "Step 4 - Choose Worker Model",
+    `Type 1, 2, or 3. Default: ${defaultKey}\n\n${hint}`,
   );
-  if (!selected) return null;
+
+  if (!result) return null;
+  const normalized = result.trim().toLowerCase();
+  const found = options.find((o) => o.key === normalized);
+  const selected = found
+    ? found.value
+    : options.find((o) => o.value.toLowerCase() === normalized)?.value;
+
+  if (!selected) throw new Error(`Invalid choice: "${result}". Type 1, 2, or 3.`);
   if (selected === "__custom__") {
     const fallback = currentMatches ? current : recommended;
-    const custom = await ctx.ui.input(
+    const customOk = await ctx.ui.confirm(
       "Step 4 - Custom Worker Model",
       [
         "Enter a custom model ID for all worker-tier agents.",
@@ -312,10 +349,11 @@ async function chooseWorkerModel(
         "",
         "Or enter any valid model ID for your provider.",
         "",
-        "What to type: the model ID, e.g. zai/glm-5-turbo",
+        "Press y to continue.",
       ].join("\n"),
-      fallback,
     );
+    if (!customOk) return null;
+    const custom = await ctx.ui.input("Step 4 - Enter Custom Worker Model ID", fallback);
     return custom?.trim() || null;
   }
   return selected;
@@ -359,22 +397,31 @@ async function promptDirectory(
   current: string,
 ) {
   const config = DIRECTORY_PROMPTS[role];
-  const message = [
-    `Where is your ${config.title.toLowerCase().replace(" directory", "")} code?`,
-    "",
-    config.who,
-    "",
-    "Enter a path relative to your project root.",
-    "The path must end with a slash.",
-    "",
-    `What to type: a relative folder path`,
-    "",
-    `Examples: ${config.examples.join(", ")}`,
-    "",
-    "Press Enter to accept the default shown below.",
-  ].join("\n");
+  const ok = await ctx.ui.confirm(
+    `Step 5 - ${config.title}`,
+    [
+      `Where is your ${config.title.toLowerCase().replace(" directory", "")} code?`,
+      "",
+      config.who,
+      "",
+      "Enter a path relative to your project root.",
+      "The path must end with a slash.",
+      "",
+      `What to type in the next screen: a relative folder path`,
+      "",
+      `Examples: ${config.examples.join(", ")}`,
+      "",
+      "You can press Enter to accept the default.",
+      "",
+      "Press y to continue.",
+    ].join("\n"),
+  );
+  if (!ok) return null;
 
-  const input = await ctx.ui.input(`Step 5 - ${config.title}`, message, current);
+  const input = await ctx.ui.input(
+    `Step 5 - Enter ${config.title} Path`,
+    current,
+  );
   if (!input) return null;
   return normalizeRelativeDir(input);
 }
@@ -394,7 +441,7 @@ async function maybeOverrideAgents(ctx: ExtensionCommandContext, state: ConfigSt
       "putting the Security Reviewer on a stronger model), you can override",
       "them individually.",
       "",
-      "Most users skip this. Press n to move on.",
+      "Most users skip this.",
       "",
       "What to type: y to configure overrides, n to skip",
     ].join("\n"),
@@ -414,7 +461,7 @@ async function maybeOverrideAgents(ctx: ExtensionCommandContext, state: ConfigSt
       ].join("\n"),
     );
     if (!shouldChange) continue;
-    const custom = await ctx.ui.input(
+    const customOk = await ctx.ui.confirm(
       `Step 6 - ${AGENT_DISPLAY_NAMES[agent]} Model`,
       [
         `Enter a new model ID for ${AGENT_DISPLAY_NAMES[agent]}.`,
@@ -427,8 +474,12 @@ async function maybeOverrideAgents(ctx: ExtensionCommandContext, state: ConfigSt
         "",
         `Current: ${current}`,
         "",
-        "What to type: the model ID",
+        "Press y to continue.",
       ].join("\n"),
+    );
+    if (!customOk) continue;
+    const custom = await ctx.ui.input(
+      `Step 6 - Enter Model ID for ${AGENT_DISPLAY_NAMES[agent]}`,
       current,
     );
     if (custom?.trim()) state.agentModels[agent] = custom.trim();
@@ -451,11 +502,10 @@ async function maybeSetupEnv(ctx: ExtensionCommandContext, state: ConfigState) {
       `Your agents need ${provider.envVar} to call the ${provider.label} API.`,
       "Onboarding can add this to your project's .env file.",
       "",
-      "What will happen:",
-      "  - Placeholder: adds ZAI_API_KEY=your-key-here to .env",
-      "    (you edit the real key in later)",
-      "  - Real value: you paste your key now",
-      "  - Skip: handle it yourself later",
+      "Your choices in the next screen:",
+      "  1. Add placeholder -- writes your-key-here (safe, edit later)",
+      "  2. Add real value  -- paste your actual key now",
+      "  3. Skip            -- do not touch .env",
       "",
       "Note: If you already have a key in .env, it will NOT be overwritten.",
       "",
@@ -472,9 +522,9 @@ async function maybeSetupEnv(ctx: ExtensionCommandContext, state: ConfigState) {
     return;
   }
 
-  const mode = await promptChoice(
+  const mode = await guidedChoice(
     ctx,
-    "Step 7 - API Key Setup",
+    "Step 7 - How to Add API Key",
     [
       `How should ${provider.envVar} be added to .env?`,
       "",
@@ -482,8 +532,11 @@ async function maybeSetupEnv(ctx: ExtensionCommandContext, state: ConfigState) {
       "  2. Add real value  -- paste your actual key now",
       "  3. Skip            -- do not touch .env",
       "",
-      "What to type: 1, 2, or 3",
+      "What to type in the next screen: 1, 2, or 3",
+      "",
+      "Press y to continue.",
     ].join("\n"),
+    "Step 7 - Choose Option",
     [
       { key: "1", label: "Add placeholder (safe, edit later)", value: "placeholder" },
       { key: "2", label: "Add real value now", value: "value" },
@@ -504,16 +557,28 @@ async function maybeSetupEnv(ctx: ExtensionCommandContext, state: ConfigState) {
 
   let value: string | undefined;
   if (mode === "value") {
-    value = (await ctx.ui.input(
+    const pasteOk = await ctx.ui.confirm(
       "Step 7 - Paste Your API Key",
       [
-        `Paste your ${provider.envVar} value.`,
+        `Paste your ${provider.envVar} value in the next screen.`,
         "",
         "This will be written to your .env file.",
         "",
-        "What to type: paste your API key, then press Enter",
+        "Press y to continue.",
       ].join("\n"),
-      "",
+    );
+    if (!pasteOk) {
+      state.envSetup = {
+        enabled: false,
+        envFilePath,
+        envVar: provider.envVar,
+        mode: "skip",
+      };
+      return;
+    }
+    value = (await ctx.ui.input(
+      "Step 7 - Paste API Key",
+      `Paste your ${provider.envVar} here`,
     )) || undefined;
   }
 
