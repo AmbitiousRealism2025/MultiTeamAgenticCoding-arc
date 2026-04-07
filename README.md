@@ -384,7 +384,76 @@ The default configuration assumes these project directories exist:
 
 Create any that don't exist, or remap the paths in the agent frontmatter.
 
-### 4. Start Agent Pi with the multi-team config
+### 4. Run the onboarding wizard
+
+This repo now includes a project-local Pi extension at `.pi/extensions/onboard.ts`.
+
+Start Pi in this project, then run:
+
+```text
+/onboard
+```
+
+The wizard will walk you through:
+- target project root
+- provider selection
+- directory mapping for frontend, backend, tests, docs, and specs
+- lead and worker model selection
+- optional per-agent model overrides
+- optional `.env` setup for `ZAI_API_KEY` or `ANTHROPIC_API_KEY`
+
+When you confirm, it will update:
+- `.pi/multi-team/multi-team-config.yaml`
+- `.pi/multi-team/agents/*.md`
+
+It also creates `.bak` backups before rewriting files.
+
+### 5. Bun development and tests
+
+This repo now includes a small Bun-based development setup for the onboarding system.
+
+Install dependencies:
+
+```bash
+bun install
+```
+
+Available commands:
+
+```bash
+bun test
+bun test --watch
+bun run typecheck
+```
+
+What gets tested right now:
+- path normalization
+- generated `multi-team-config.yaml`
+- agent markdown rewrites
+- `.env` content updates
+
+The testable implementation lives in:
+- `src/onboarding/`
+
+The Pi runtime wrapper lives in:
+- `.pi/extensions/onboard.ts`
+
+### 6. Automatic CI testing
+
+GitHub Actions is configured to run Bun tests automatically on every push and pull request.
+
+Workflow file:
+
+```text
+.github/workflows/bun-test.yml
+```
+
+It runs:
+- `bun install`
+- `bun run typecheck`
+- `bun test`
+
+### 7. Start Agent Pi with the multi-team config
 
 ```bash
 agent-pi --config .pi/multi-team/multi-team-config.yaml
@@ -392,7 +461,7 @@ agent-pi --config .pi/multi-team/multi-team-config.yaml
 
 Refer to Agent Pi's documentation for the exact startup command for your installation.
 
-### 5. Talk to the Orchestrator
+### 8. Talk to the Orchestrator
 
 The Orchestrator is your only interface. Describe what you want to build, fix, or understand. The Orchestrator classifies your request and routes it to the appropriate team. You do not need to address specific agents or teams directly.
 
@@ -585,6 +654,57 @@ A simple backend question routes to the Orchestrator plus Engineering Lead plus 
 **Typical range:** For day-to-day feature work touching one team, expect costs comparable to two to three Sonnet calls plus one Opus call per user turn.
 
 ---
+
+## Development Workflow
+
+### Setup
+
+Install dependencies:
+
+```bash
+bun install
+```
+
+Install or refresh the local git hooks:
+
+```bash
+bun run hooks:install
+```
+
+### Daily Commands
+
+```bash
+bun test
+bun test --watch
+bun run typecheck
+```
+
+### Project Structure
+
+- `src/onboarding/` — testable onboarding core logic
+- `.pi/extensions/onboard.ts` — Pi runtime command wrapper for `/onboard`
+- `tests/` — Bun unit tests
+- `.github/workflows/bun-test.yml` — CI workflow for typecheck and tests
+
+### Manual Testing
+
+Start Pi from the project root so the local extension auto-loads, then run:
+
+```text
+/onboard
+```
+
+Use this for end-to-end interactive testing of the onboarding flow.
+
+### Automatic Checks
+
+Local pre-commit hook runs:
+- `bun run typecheck`
+- `bun test`
+
+GitHub Actions also runs the same checks on:
+- push
+- pull request
 
 ## Credits
 
