@@ -4,6 +4,9 @@ import type { ConfigState } from "../src/onboarding";
 import fs from "node:fs";
 import path from "node:path";
 
+const repoRoot = path.resolve(import.meta.dir, "..");
+const agentPath = (file: string) => path.join(repoRoot, ".pi/multi-team/agents", file);
+
 const baseState: ConfigState = {
   projectRoot: "/tmp/project",
   provider: "zai",
@@ -62,8 +65,7 @@ describe("buildConfigYaml", () => {
 
 describe("updateAgentContent", () => {
   test("rewrites backend agent paths and model", () => {
-    const filePath = path.resolve(".pi/multi-team/agents/backend-dev.md");
-    const original = fs.readFileSync(filePath, "utf8");
+    const original = fs.readFileSync(agentPath("backend-dev.md"), "utf8");
     const updated = updateAgentContent(original, "backend-dev", baseState);
     expect(updated).toContain("model: zai/glm-5-turbo");
     expect(updated).toContain("- path: server/");
@@ -72,16 +74,14 @@ describe("updateAgentContent", () => {
   });
 
   test("rewrites QA tests path", () => {
-    const filePath = path.resolve(".pi/multi-team/agents/qa-engineer.md");
-    const original = fs.readFileSync(filePath, "utf8");
+    const original = fs.readFileSync(agentPath("qa-engineer.md"), "utf8");
     const updated = updateAgentContent(original, "qa-engineer", baseState);
     expect(updated).toContain("- path: __tests__/");
     expect(updated).toContain("You own `__tests__/`");
   });
 
   test("rewrites specs path for planning agents", () => {
-    const filePath = path.resolve(".pi/multi-team/agents/product-manager.md");
-    const original = fs.readFileSync(filePath, "utf8");
+    const original = fs.readFileSync(agentPath("product-manager.md"), "utf8");
     const updated = updateAgentContent(original, "product-manager", baseState);
     expect(updated).toContain("- path: planning/");
     expect(updated).toContain("Write specs and user stories in `planning/`");
