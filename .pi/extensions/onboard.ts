@@ -15,31 +15,77 @@ import {
 } from "../../src/onboarding";
 import type { ConfigState, ProviderDef, ProviderId } from "../../src/onboarding";
 
+async function showIntro(ctx: ExtensionCommandContext) {
+  const message = [
+    "This onboarding wizard will configure the multi-team Agent Pi setup for a project.",
+    "",
+    "What you will be asked for:",
+    "1. Project root directory",
+    "2. Model provider",
+    "3. Lead and worker model selection",
+    "4. Directory mappings for frontend, backend, tests, docs, and specs",
+    "5. Optional per-agent model overrides",
+    "6. Optional .env provider key setup",
+    "",
+    "Important:",
+    "- Step 1 is your target project directory",
+    "- directory paths should be relative to that project root",
+    "- you can cancel at any prompt",
+    "",
+    "Continue?",
+  ].join("\n");
+
+  return ctx.ui.confirm("Onboarding", message);
+}
+
 async function promptForProjectRoot(ctx: ExtensionCommandContext) {
-  const result = await ctx.ui.input("Onboarding", "Enter the target project root", ctx.cwd);
+  const result = await ctx.ui.input(
+    "Onboarding - Step 1 of 6",
+    "Enter the target project root directory",
+    ctx.cwd,
+  );
   if (!result) return null;
   return path.resolve(result.trim());
 }
 
+async function promptChoice(
+  ctx: ExtensionCommandContext,
+  title: string,
+  prompt: string,
+  options: Array<{ key: string; label: string; value: string }>,
+  defaultKey: string,
+) {
+  const lines = [prompt, "", ...options.map((option) => `${option.key}. ${option.label}`), "", `Default: ${defaultKey}`];
+  const value = await ctx.ui.input(title, lines.join("\n"), defaultKey);
+  if (!value) return null;
+  const normalized = value.trim().toLowerCase();
+  const found = options.find((option) => option.key === normalized);
+  if (found) return found.value;
+  const directValue = options.find((option) => option.value.toLowerCase() === normalized);
+  if (directValue) return directValue.value;
+  throw new Error(`Invalid choice: ${value}`);
+}
+
 async function selectProvider(ctx: ExtensionCommandContext, current: ProviderId) {
-  const value = await ctx.ui.select(
-    "Onboarding",
-    "Select model provider",
+  const value = await promptChoice(
+    ctx,
+    "Onboarding - Step 2 of 6",
+    "Choose your model provider.",
     [
-      { value: "zai", label: "Z.ai" },
-      { value: "anthropic", label: "Anthropic" },
+      { key: "1", label: "Z.ai", value: "zai" },
+      { key: "2", label: "Anthropic", value: "anthropic" },
     ],
-    current,
+    current === "anthropic" ? "2" : "1",
   );
   return value ? (value as ProviderId) : null;
 }
 
-async function promptDirectory(
-  ctx: ExtensionCommandContext,
-  label: string,
-  current: string,
-) {
-  const input = await ctx.ui.input("Onboarding", `${label} path relative to project root`, current);
+async function promptDirectory(ctx: ExtensionCommandContext, label: string, current: string) {
+  const input = await ctx.ui.input(
+    "Onboarding - Directory Mapping",
+    `${label} path relative to the selected project root`,
+    current,
+  );
   if (!input) return null;
   return normalizeRelativeDir(input);
 }
@@ -51,39 +97,46 @@ async function chooseTierModel(
   current: string,
   alternate: string,
 ) {
-  const defaultSelection = current === recommended || current === alternate ? current : recommended;
-  const choice = await ctx.ui.select(
-    "Onboarding",
+  const currentMatches = current === recommended || current === alternate;
+  const selected = await promptChoice(
+    ctx,
     title,
+    "Choose a model option.",
     [
-      { value: recommended, label: `${recommended} (recommended)` },
-      { value: alternate, label: alternate },
-      { value: "__custom__", label: "Custom model ID" },
+      { key: "1", label: `${recommended} (recommended)`, value: recommended },
+      { key: "2", label: alternate, value: alternate },
+      { key: "3", label: "Custom model ID", value: "__custom__" },
     ],
-    defaultSelection,
+    currentMatches ? (current === alternate ? "2" : "1") : "1",
   );
-  if (!choice) return null;
-  if (choice === "__custom__") {
-    const custom = await ctx.ui.input("Onboarding", `${title} - custom model ID`, current);
+  if (!selected) return null;
+  if (selected === "__custom__") {
+    const fallback = currentMatches ? current : recommended;
+    const custom = await ctx.ui.input(title, "Enter a custom model ID", fallback);
     return custom?.trim() || null;
   }
-  return choice;
+  return selected;
 }
 
 async function maybeOverrideAgents(ctx: ExtensionCommandContext, state: ConfigState) {
   const shouldOverride = await ctx.ui.confirm(
-    "Per-agent overrides",
+    "Onboarding - Optional overrides",
     "Do you want to override models for individual agents?",
   );
   if (!shouldOverride) return;
+
   for (const agent of ALL_AGENTS) {
     const current = state.agentModels[agent];
     const shouldChange = await ctx.ui.confirm(
-      "Per-agent override",
-      `Override model for ${AGENT_DISPLAY_NAMES[agent]}?\nCurrent: ${current}`,
+      "Onboarding - Per-agent override",
+      `Override model for ${AGENT_DISPLAY_NAMES[agent]}?\n\nCurrent model: ${current}`,
     );
     if (!shouldChange) continue;
-    const custom = await ctx.ui.input("Onboarding", `Model for ${AGENT_DISPLAY_NAMES[agent]}`, current);
+    const custom = await ctx.ui.input(
+      "Onboarding - Per-agent override",
+      `Enter model ID for ${AGENT_DISPLAY_NAMES[agent]}`,
+      current,
+    );
     if (custom?.trim()) state.agentModels[agent] = custom.trim();
   }
 }
@@ -92,8 +145,8 @@ async function maybeSetupEnv(ctx: ExtensionCommandContext, state: ConfigState) {
   const provider = PROVIDERS[state.provider];
   const envFilePath = path.join(state.projectRoot, ".env");
   const shouldSetup = await ctx.ui.confirm(
-    "Provider credentials",
-    `Do you want onboarding to set up ${provider.envVar} in .env?`,
+    "Onboarding - Provider credentials",
+    `Do you want onboarding to help set up ${provider.envVar} in .env?`,
   );
   if (!shouldSetup) {
     state.envSetup = {
@@ -105,15 +158,16 @@ async function maybeSetupEnv(ctx: ExtensionCommandContext, state: ConfigState) {
     return;
   }
 
-  const mode = await ctx.ui.select(
-    "Onboarding",
-    `How should ${provider.envVar} be added?`,
+  const mode = await promptChoice(
+    ctx,
+    "Onboarding - Provider credentials",
+    `How should ${provider.envVar} be added to .env?`,
     [
-      { value: "placeholder", label: "Add placeholder value" },
-      { value: "value", label: "Add real value now" },
-      { value: "skip", label: "Skip" },
+      { key: "1", label: "Add placeholder value", value: "placeholder" },
+      { key: "2", label: "Add real value now", value: "value" },
+      { key: "3", label: "Skip", value: "skip" },
     ],
-    "placeholder",
+    "1",
   );
 
   if (!mode || mode === "skip") {
@@ -128,7 +182,11 @@ async function maybeSetupEnv(ctx: ExtensionCommandContext, state: ConfigState) {
 
   let value: string | undefined;
   if (mode === "value") {
-    value = (await ctx.ui.input("Onboarding", `Enter value for ${provider.envVar}`, "")) || undefined;
+    value = (await ctx.ui.input(
+      "Onboarding - Provider credentials",
+      `Enter value for ${provider.envVar}`,
+      "",
+    )) || undefined;
   }
 
   state.envSetup = {
@@ -140,9 +198,11 @@ async function maybeSetupEnv(ctx: ExtensionCommandContext, state: ConfigState) {
   };
 }
 
-export function buildReview(state: ConfigState) {
+function buildReview(state: ConfigState) {
   const provider = PROVIDERS[state.provider];
   const lines = [
+    "Review your onboarding choices before applying.",
+    "",
     `Project root: ${state.projectRoot}`,
     `Provider: ${provider.label}`,
     `Lead-tier model: ${state.leadModel}`,
@@ -172,6 +232,12 @@ export default function onboard(pi: ExtensionAPI) {
     description: "Run an interactive onboarding wizard for the multi-team Agent Pi config",
     handler: async (_args, ctx) => {
       try {
+        const continueOnboarding = await showIntro(ctx);
+        if (!continueOnboarding) {
+          ctx.ui.notify("Onboarding cancelled", "info");
+          return;
+        }
+
         const projectRoot = await promptForProjectRoot(ctx);
         if (!projectRoot) return;
 
@@ -187,7 +253,7 @@ export default function onboard(pi: ExtensionAPI) {
 
         const leadModel = await chooseTierModel(
           ctx,
-          "Choose model for Orchestrator + Leads",
+          "Onboarding - Step 3 of 6",
           providerDef.defaultLeadModel,
           leadCurrent,
           provider === "zai" ? "zai/glm-5-turbo" : "anthropic/claude-sonnet-4-6",
@@ -196,7 +262,7 @@ export default function onboard(pi: ExtensionAPI) {
 
         const workerModel = await chooseTierModel(
           ctx,
-          "Choose model for Workers",
+          "Onboarding - Step 4 of 6",
           providerDef.defaultWorkerModel,
           workerCurrent,
           provider === "zai" ? "zai/glm-5.1" : "anthropic/claude-opus-4-6",
@@ -233,7 +299,7 @@ export default function onboard(pi: ExtensionAPI) {
         await maybeOverrideAgents(ctx, state);
         await maybeSetupEnv(ctx, state);
 
-        const confirmed = await ctx.ui.confirm("Review onboarding plan", buildReview(state));
+        const confirmed = await ctx.ui.confirm("Onboarding - Final review", buildReview(state));
         if (!confirmed) {
           ctx.ui.notify("Onboarding cancelled", "info");
           return;
