@@ -93,6 +93,13 @@ describe("updateEnvContent", () => {
     expect(updateEnvContent("", "ZAI_API_KEY", "placeholder")).toBe("ZAI_API_KEY=your-key-here\n");
   });
 
+  test("preserves an existing env var in placeholder mode", () => {
+    const updated = updateEnvContent("FOO=bar\nZAI_API_KEY=realkey\n", "ZAI_API_KEY", "placeholder");
+    expect(updated).toContain("FOO=bar");
+    expect(updated).toContain("ZAI_API_KEY=realkey");
+    expect(updated).not.toContain("your-key-here");
+  });
+
   test("replaces an existing env var", () => {
     const updated = updateEnvContent("FOO=bar\nZAI_API_KEY=old\n", "ZAI_API_KEY", "value", "newkey");
     expect(updated).toContain("FOO=bar");

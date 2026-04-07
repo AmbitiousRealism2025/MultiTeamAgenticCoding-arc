@@ -51,6 +51,7 @@ async function chooseTierModel(
   current: string,
   alternate: string,
 ) {
+  const defaultSelection = current === recommended || current === alternate ? current : recommended;
   const choice = await ctx.ui.select(
     "Onboarding",
     title,
@@ -59,7 +60,7 @@ async function chooseTierModel(
       { value: alternate, label: alternate },
       { value: "__custom__", label: "Custom model ID" },
     ],
-    current === recommended || current === alternate ? current : "__custom__",
+    defaultSelection,
   );
   if (!choice) return null;
   if (choice === "__custom__") {

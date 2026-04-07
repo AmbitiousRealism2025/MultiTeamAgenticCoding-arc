@@ -245,9 +245,12 @@ export function ensureDirectories(projectRoot: string, directories: Record<DirRo
 }
 
 export function updateEnvContent(existing: string, envVar: string, mode: "placeholder" | "value", value?: string) {
+  const regex = new RegExp(`^${envVar}=.*$`, "m");
+  if (regex.test(existing) && mode === "placeholder") {
+    return existing;
+  }
   const lineValue = mode === "placeholder" ? "your-key-here" : (value ?? "");
   const line = `${envVar}=${lineValue}`;
-  const regex = new RegExp(`^${envVar}=.*$`, "m");
   if (regex.test(existing)) {
     return existing.replace(regex, line);
   }
